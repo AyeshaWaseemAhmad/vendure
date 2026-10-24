@@ -377,6 +377,104 @@ describe('EventBus', () => {
             expect(spy).toHaveBeenNthCalledWith(2, 'test-handler1');
         });
 
+        it('orders handlers which declare "after" on one side and "before" on the other', async () => {
+            const event = new TestEvent('foo');
+            const spy = vi.fn((input: string) => undefined);
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler1'),
+                id: 'test-handler1',
+                event: TestEvent,
+                after: 'test-handler2',
+            });
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler2'),
+                id: 'test-handler2',
+                event: TestEvent,
+                before: 'test-handler1',
+            });
+
+            await eventBus.publish(event);
+
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy).toHaveBeenNthCalledWith(1, 'test-handler2');
+            expect(spy).toHaveBeenNthCalledWith(2, 'test-handler1');
+        });
+
+        it('orders handlers which declare "before" on one side and "after" on the other', async () => {
+            const event = new TestEvent('foo');
+            const spy = vi.fn((input: string) => undefined);
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler1'),
+                id: 'test-handler1',
+                event: TestEvent,
+                before: 'test-handler2',
+            });
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler2'),
+                id: 'test-handler2',
+                event: TestEvent,
+                after: 'test-handler1',
+            });
+
+            await eventBus.publish(event);
+
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy).toHaveBeenNthCalledWith(1, 'test-handler1');
+            expect(spy).toHaveBeenNthCalledWith(2, 'test-handler2');
+        });
+
+        it('orders handlers which declare the same constraint on both sides, whatever the registration order', async () => {
+            const event = new TestEvent('foo');
+            const spy = vi.fn((input: string) => undefined);
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler2'),
+                id: 'test-handler2',
+                event: TestEvent,
+                before: 'test-handler1',
+            });
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler1'),
+                id: 'test-handler1',
+                event: TestEvent,
+                after: 'test-handler2',
+            });
+
+            await eventBus.publish(event);
+
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy).toHaveBeenNthCalledWith(1, 'test-handler2');
+            expect(spy).toHaveBeenNthCalledWith(2, 'test-handler1');
+        });
+
+        it('orders handlers which declare the same constraint on both sides among other handlers', async () => {
+            const event = new TestEvent('foo');
+            const spy = vi.fn((input: string) => undefined);
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler3'),
+                id: 'test-handler3',
+                event: TestEvent,
+            });
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler1'),
+                id: 'test-handler1',
+                event: TestEvent,
+                after: 'test-handler2',
+            });
+            eventBus.registerBlockingEventHandler({
+                handler: e => spy('test-handler2'),
+                id: 'test-handler2',
+                event: TestEvent,
+                before: 'test-handler1',
+            });
+
+            await eventBus.publish(event);
+
+            const calls = spy.mock.calls.map(call => call[0]);
+            expect(calls).toHaveLength(3);
+            expect(calls).toContain('test-handler3');
+            expect(calls.indexOf('test-handler2')).toBeLessThan(calls.indexOf('test-handler1'));
+        });
+
         it('throws if there is a cycle in before ordering', () => {
             const spy = vi.fn((input: string) => undefined);
             eventBus.registerBlockingEventHandler({

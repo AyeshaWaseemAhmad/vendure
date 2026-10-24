@@ -275,8 +275,10 @@ export class EventBus implements OnModuleDestroy {
                             `Circular dependency detected between event handlers ${handler.id} and ${beforeHandler.id}`,
                         );
                     }
-                    orderedHandlers = orderedHandlers.filter(h => h.id !== beforeHandler.id);
-                    addHandler(beforeHandler);
+                    if (beforeHandler.after !== handler.id) {
+                        orderedHandlers = orderedHandlers.filter(h => h.id !== beforeHandler.id);
+                        addHandler(beforeHandler);
+                    }
                 }
             }
         };
