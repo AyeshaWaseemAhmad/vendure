@@ -223,10 +223,11 @@ export class OrderCalculator {
         promotions: Promotion[],
     ): Promise<void> {
         for (const line of order.lines) {
-            // Must be re-calculated for each line, since the previous lines may have triggered promotions
-            // which affected the order price.
             line.clearAdjustments();
+        }
+        this.calculateOrderTotals(order);
 
+        for (const line of order.lines) {
             for (const promotion of promotions) {
                 // We need to test the promotion *again*, even though we've tested them for the line.
                 // This is because the previous Promotions may have adjusted the Order in such a way
