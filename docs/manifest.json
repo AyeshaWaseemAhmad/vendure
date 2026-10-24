@@ -1,7 +1,7 @@
 {
   "id": "core",
   "name": "Vendure Framework Documentation",
-  "version": "3.8.0",
+  "version": "3.8.1",
   "vendureVersion": "v3",
   "navigation": [
     {
@@ -12,7 +12,7 @@
           "title": "Installation",
           "slug": "installation",
           "file": "docs/guides/getting-started/installation/index.mdx",
-          "lastModified": "2026-08-19T14:27:37+02:00"
+          "lastModified": "2026-10-23T13:20:29+02:00"
         },
         {
           "title": "Introducing GraphQL",
@@ -434,7 +434,7 @@
           "title": "CMS Integration Plugin",
           "slug": "cms-integration-plugin",
           "file": "docs/guides/how-to/cms-integration-plugin/index.mdx",
-          "lastModified": "2026-07-14T11:47:37+02:00"
+          "lastModified": "2026-10-23T13:20:29+02:00"
         },
         {
           "title": "Codegen",
@@ -488,7 +488,7 @@
           "title": "S3 Asset Storage",
           "slug": "s3-asset-storage",
           "file": "docs/guides/how-to/s3-asset-storage/index.mdx",
-          "lastModified": "2026-02-12T16:47:03+01:00"
+          "lastModified": "2026-10-23T13:20:29+02:00"
         },
         {
           "title": "Telemetry",
@@ -662,7 +662,7 @@
           "title": "Deployment",
           "slug": "deployment",
           "file": "docs/guides/extending-the-dashboard/deployment/index.mdx",
-          "lastModified": "2026-10-19T21:03:28+02:00"
+          "lastModified": "2026-10-22T08:18:52+02:00"
         },
         {
           "title": "Tech Stack",
@@ -1270,7 +1270,7 @@
                   "title": "Bootstrap",
                   "slug": "bootstrap",
                   "file": "docs/reference/typescript-api/common/bootstrap.mdx",
-                  "lastModified": "2026-09-15T12:28:00Z"
+                  "lastModified": "2026-10-22T06:39:48Z"
                 },
                 {
                   "title": "CurrencyCode",
@@ -1462,7 +1462,7 @@
                   "title": "ApiOptions",
                   "slug": "api-options",
                   "file": "docs/reference/typescript-api/configuration/api-options.mdx",
-                  "lastModified": "2026-10-12T10:23:42+02:00"
+                  "lastModified": "2026-10-22T11:24:53Z"
                 },
                 {
                   "title": "CollectionFilter",
@@ -2184,7 +2184,7 @@
                   "title": "PlatformPromotion",
                   "slug": "platform-promotion",
                   "file": "docs/reference/typescript-api/extensions-api/platform-promotion.mdx",
-                  "lastModified": "2026-10-19T19:05:00Z"
+                  "lastModified": "2026-10-22T06:20:30Z"
                 }
               ],
               "lastModified": "2026-10-19T19:05:00Z"
@@ -3724,7 +3724,7 @@
                   "title": "BootstrapWorker",
                   "slug": "bootstrap-worker",
                   "file": "docs/reference/typescript-api/worker/bootstrap-worker.mdx",
-                  "lastModified": "2026-09-15T12:28:00Z"
+                  "lastModified": "2026-10-22T06:39:48Z"
                 },
                 {
                   "title": "VendureWorker",
@@ -4168,7 +4168,7 @@
               "title": "IdSchema",
               "slug": "id-schema",
               "file": "docs/reference/mcp-sdk/id-schema.mdx",
-              "lastModified": "2026-10-01T19:26:07+02:00"
+              "lastModified": "2026-10-23T13:51:19Z"
             },
             {
               "title": "Int32Schema",
@@ -4198,7 +4198,7 @@
               "title": "MAX_ID_LIST_LENGTH",
               "slug": "max_id_list_length",
               "file": "docs/reference/mcp-sdk/max_id_list_length.mdx",
-              "lastModified": "2026-10-01T19:26:07+02:00"
+              "lastModified": "2026-10-23T13:51:19Z"
             },
             {
               "title": "MAX_LIST_PAGE_SIZE",
@@ -4594,12 +4594,6 @@
                   "lastModified": "2026-07-29T16:21:34+02:00"
                 },
                 {
-                  "title": "PlatformPromotion",
-                  "slug": "platform-promotion",
-                  "file": "docs/reference/dashboard/extensions-api/platform-promotion.mdx",
-                  "lastModified": "2026-10-19T19:05:00Z"
-                },
-                {
                   "title": "RefundDestinations",
                   "slug": "refund-destinations",
                   "file": "docs/reference/dashboard/extensions-api/refund-destinations.mdx",
@@ -4727,7 +4721,7 @@
                   "title": "UseAuth",
                   "slug": "use-auth",
                   "file": "docs/reference/dashboard/hooks/use-auth.mdx",
-                  "lastModified": "2026-07-23T11:18:30+02:00"
+                  "lastModified": "2026-10-23T13:32:49+02:00"
                 },
                 {
                   "title": "UseChannel",
@@ -4907,7 +4901,7 @@
                   "title": "VendureDashboardPlugin",
                   "slug": "vendure-dashboard-plugin",
                   "file": "docs/reference/dashboard/vite-plugin/vendure-dashboard-plugin.mdx",
-                  "lastModified": "2026-10-19T19:05:00Z"
+                  "lastModified": "2026-10-22T06:20:30Z"
                 }
               ],
               "lastModified": "2026-01-28T14:49:21+01:00"
