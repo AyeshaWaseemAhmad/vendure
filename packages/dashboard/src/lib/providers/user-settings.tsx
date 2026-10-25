@@ -89,7 +89,7 @@ export interface UserSettingsContextType {
      */
     settingsReady: boolean;
     settings: UserSettings;
-    resetServerSettings: () => void;
+    resetServerSettings?: () => void;
     setDisplayLanguage: (language: string) => void;
     setDisplayLocale: (locale: string | undefined) => void;
     setContentLanguage: (language: string) => void;

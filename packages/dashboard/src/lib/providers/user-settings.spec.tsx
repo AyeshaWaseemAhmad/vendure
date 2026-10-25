@@ -182,7 +182,7 @@ describe('UserSettingsProvider', () => {
         apiMock.query.mockRejectedValue(forbiddenError());
         await act(async () => {
             queryClient.clear();
-            context.resetServerSettings();
+            context.resetServerSettings?.();
         });
         await flush();
         expect(context.settingsReady).toBe(false);
@@ -217,7 +217,7 @@ describe('UserSettingsProvider', () => {
         apiMock.query.mockRejectedValue(forbiddenError());
         await act(async () => {
             queryClient.clear();
-            context.resetServerSettings();
+            context.resetServerSettings?.();
         });
         await flush();
         await act(async () => finishSave({ setSettingsStoreValue: { result: true } }));
