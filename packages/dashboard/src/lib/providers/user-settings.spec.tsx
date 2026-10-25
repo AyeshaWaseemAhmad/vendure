@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { keepPreviousData, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, useContext } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -60,7 +60,7 @@ describe('UserSettingsProvider', () => {
         apiMock.query.mockReset();
         apiMock.mutate.mockReset();
         apiMock.mutate.mockResolvedValue({ setSettingsStoreValue: { result: true } });
-        queryClient = new QueryClient();
+        queryClient = new QueryClient({ defaultOptions: { queries: { placeholderData: keepPreviousData } } });
         container = document.createElement('div');
         root = createRoot(container);
     });
@@ -172,6 +172,63 @@ describe('UserSettingsProvider', () => {
         await act(async () => context.setTheme('dark'));
         await flush();
         expect(apiMock.mutate).not.toHaveBeenCalled();
+    });
+
+    it('initializes from the next session after the previous session ended', async () => {
+        apiMock.query.mockResolvedValue({ getSettingsStoreValue: { displayLanguage: 'de', theme: 'dark' } });
+        await render();
+        expect(context.settings.displayLanguage).toBe('de');
+
+        apiMock.query.mockRejectedValue(forbiddenError());
+        await act(async () => {
+            queryClient.clear();
+            context.resetServerSettings();
+        });
+        await flush();
+        expect(context.settingsReady).toBe(false);
+
+        await act(async () => context.setActiveChannelId('2'));
+        await flush();
+        expect(apiMock.mutate).not.toHaveBeenCalled();
+
+        apiMock.query.mockResolvedValue({
+            getSettingsStoreValue: { displayLanguage: 'fr', tableSettings: { products: { pageSize: 37 } } },
+        });
+        await act(async () => queryClient.invalidateQueries());
+        await flush();
+
+        expect(context.settingsReady).toBe(true);
+        expect(context.settings.displayLanguage).toBe('fr');
+        expect(context.settings.theme).toBe('system');
+        expect(context.settings.tableSettings).toEqual({ products: { pageSize: 37 } });
+        expect(apiMock.mutate).not.toHaveBeenCalled();
+    });
+
+    it('does not restore the previous session when its last save completes after the reset', async () => {
+        apiMock.query.mockResolvedValue({ getSettingsStoreValue: { displayLanguage: 'de' } });
+        await render();
+
+        let finishSave: (value: unknown) => void = () => undefined;
+        apiMock.mutate.mockReturnValue(new Promise(resolve => (finishSave = resolve)));
+        await act(async () => context.setTheme('dark'));
+        await flush();
+        expect(apiMock.mutate).toHaveBeenCalledTimes(1);
+
+        apiMock.query.mockRejectedValue(forbiddenError());
+        await act(async () => {
+            queryClient.clear();
+            context.resetServerSettings();
+        });
+        await flush();
+        await act(async () => finishSave({ setSettingsStoreValue: { result: true } }));
+        await flush();
+
+        apiMock.query.mockResolvedValue({ getSettingsStoreValue: { displayLanguage: 'fr' } });
+        await act(async () => queryClient.invalidateQueries());
+        await flush();
+
+        expect(context.settings.displayLanguage).toBe('fr');
+        expect(apiMock.mutate).toHaveBeenCalledTimes(1);
     });
 
     it('becomes ready when the settings store field is not registered', async () => {

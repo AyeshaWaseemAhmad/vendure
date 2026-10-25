@@ -89,6 +89,7 @@ export interface UserSettingsContextType {
      */
     settingsReady: boolean;
     settings: UserSettings;
+    resetServerSettings: () => void;
     setDisplayLanguage: (language: string) => void;
     setDisplayLocale: (locale: string | undefined) => void;
     setContentLanguage: (language: string) => void;
@@ -166,7 +167,8 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
     // Load settings from server on mount
     const {
         data: serverSettingsResponse,
-        isSuccess: serverSettingsLoaded,
+        isSuccess,
+        isPlaceholderData,
         isError: serverSettingsErrored,
         error,
     } = useQuery({
@@ -176,6 +178,8 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
         staleTime: 0,
         enabled: settingsStoreIsAvailable,
     });
+
+    const serverSettingsLoaded = isSuccess && !isPlaceholderData;
 
     useEffect(() => {
         if (
@@ -197,7 +201,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
             }),
         onSuccess: (_, settingsSaved) => {
             // Only update serverSettings after successful save
-            setServerSettings(settingsSaved);
+            setServerSettings(current => (current ? settingsSaved : current));
             saveInProgressRef.current = false;
         },
         onError: error => {
@@ -289,10 +293,16 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
         setSettings(prev => ({ ...prev, [key]: value }));
     };
 
+    const resetServerSettings = () => {
+        setServerSettings(null);
+        setIsReady(false);
+    };
+
     const contextValue: UserSettingsContextType = {
         settingsStoreIsAvailable,
         settingsReady: isReady || !settingsStoreIsAvailable,
         settings,
+        resetServerSettings,
         setDisplayLanguage: language => updateSetting('displayLanguage', language),
         setDisplayLocale: locale => updateSetting('displayLocale', locale),
         setContentLanguage: language => updateSetting('contentLanguage', language),
