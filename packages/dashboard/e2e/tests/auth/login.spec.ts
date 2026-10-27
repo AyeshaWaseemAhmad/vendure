@@ -533,6 +533,8 @@ test.describe('Stored user settings on login', () => {
             }
             expect(stores.second.tableSettings?.[MARKER_TABLE_ID]).toEqual(markerTableSettings);
         } finally {
+            // The emulated store may still be handling a request, which fails once the context closes
+            await Promise.all(context.pages().map(p => p.unrouteAll({ behavior: 'ignoreErrors' })));
             await context.close();
             await client
                 .gql(`mutation ($ids: [ID!]!) { deleteAdministrators(ids: $ids) { result } }`, {
