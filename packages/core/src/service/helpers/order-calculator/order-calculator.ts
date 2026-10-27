@@ -222,6 +222,8 @@ export class OrderCalculator {
         order: Order,
         promotions: Promotion[],
     ): Promise<void> {
+        // Clear every line before testing any promotion. Otherwise the discounts from the previous
+        // calculation still reduce the subTotal which conditions such as minimum_order_amount test.
         for (const line of order.lines) {
             line.clearAdjustments();
         }
