@@ -389,6 +389,9 @@ export class BullMQJobQueueStrategy implements InspectableJobQueueStrategy {
         if (connection.status === 'ready') {
             return Promise.resolve();
         }
+        if (connection.status === 'end') {
+            return Promise.reject(new Error('Redis connection closed before it became ready'));
+        }
         return new Promise((resolve, reject) => {
             const onReady = () => {
                 connection.off('end', onEnd);

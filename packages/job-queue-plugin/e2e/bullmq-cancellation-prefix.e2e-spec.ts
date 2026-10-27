@@ -16,6 +16,7 @@ const PREFIX_B = 'cancel-e2e-b';
 const PREFIX_C = 'cancel-e2e-c';
 const PREFIX_D = 'cancel-e2e-d';
 const PREFIX_E = 'cancel-e2e-e';
+const PREFIX_F = 'cancel-e2e-f';
 const QUEUE = 'cancel-test';
 
 async function createStrategy(prefix: string, connectionOptions: RedisOptions = {}) {
@@ -48,7 +49,7 @@ describe('BullMQJobQueueStrategy cancellation', () => {
     let redis: Redis;
 
     async function deleteTestKeys() {
-        for (const prefix of [PREFIX_A, PREFIX_B, PREFIX_C, PREFIX_D, PREFIX_E]) {
+        for (const prefix of [PREFIX_A, PREFIX_B, PREFIX_C, PREFIX_D, PREFIX_E, PREFIX_F]) {
             const keys = await redis.keys(`${prefix}:*`);
             if (keys.length) {
                 await redis.del(...keys);
@@ -155,5 +156,21 @@ describe('BullMQJobQueueStrategy cancellation', () => {
         await strategy.cancelJob(job.id as string);
 
         await vi.waitFor(() => expect(running.e.state).toBe(JobState.CANCELLED));
+    });
+
+    // #5627 - start() must report a subscriber connection that has already closed instead of waiting forever
+    it('rejects start() when the subscriber connection has already closed', async () => {
+        const strategy = await createStrategy(PREFIX_F);
+        strategies.push(strategy);
+        const subscriber = (strategy as any).cancellationSub as Redis;
+        if (subscriber.status !== 'ready') {
+            await new Promise(resolve => subscriber.once('ready', resolve));
+        }
+        subscriber.disconnect();
+        await vi.waitFor(() => expect(subscriber.status).toBe('end'));
+
+        await expect(strategy.start(QUEUE, () => Promise.resolve())).rejects.toThrow(
+            'Redis connection closed before it became ready',
+        );
     });
 });
