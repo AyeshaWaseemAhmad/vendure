@@ -400,6 +400,11 @@ export class BullMQJobQueueStrategy implements InspectableJobQueueStrategy {
             };
             connection.once('ready', onReady);
             connection.once('end', onEnd);
+            // A lazyConnect connection stays in 'wait' until a command is sent, and nothing
+            // else uses this connection, so connect it here.
+            if (connection.status === 'wait') {
+                connection.connect().catch(() => undefined);
+            }
         });
     }
 

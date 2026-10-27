@@ -1,6 +1,6 @@
 import { JobState } from '@vendure/common/lib/generated-types';
 import { Injector, Job } from '@vendure/core';
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 import { firstValueFrom, Subject } from 'rxjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -15,14 +15,20 @@ const PREFIX_A = 'cancel-e2e-a';
 const PREFIX_B = 'cancel-e2e-b';
 const PREFIX_C = 'cancel-e2e-c';
 const PREFIX_D = 'cancel-e2e-d';
+const PREFIX_E = 'cancel-e2e-e';
 const QUEUE = 'cancel-test';
 
-async function createStrategy(prefix: string) {
+async function createStrategy(prefix: string, connectionOptions: RedisOptions = {}) {
     const providers = new Map<unknown, unknown>([
         [
             BULLMQ_PLUGIN_OPTIONS,
             {
-                connection: { host: redisHost, port: redisPort, maxRetriesPerRequest: null },
+                connection: {
+                    host: redisHost,
+                    port: redisPort,
+                    maxRetriesPerRequest: null,
+                    ...connectionOptions,
+                },
                 workerOptions: { prefix },
                 queueOptions: { prefix },
             },
@@ -42,7 +48,7 @@ describe('BullMQJobQueueStrategy cancellation', () => {
     let redis: Redis;
 
     async function deleteTestKeys() {
-        for (const prefix of [PREFIX_A, PREFIX_B, PREFIX_C, PREFIX_D]) {
+        for (const prefix of [PREFIX_A, PREFIX_B, PREFIX_C, PREFIX_D, PREFIX_E]) {
             const keys = await redis.keys(`${prefix}:*`);
             if (keys.length) {
                 await redis.del(...keys);
@@ -131,5 +137,23 @@ describe('BullMQJobQueueStrategy cancellation', () => {
         await strategy.cancelJob(job.id as string);
 
         await vi.waitFor(() => expect(running.d.state).toBe(JobState.CANCELLED));
+    });
+
+    // #5627 - with lazyConnect nothing else connects the subscriber, so start() must not wait for it forever
+    it('cancels a running job when the connection uses lazyConnect', async () => {
+        const strategy = await createStrategy(PREFIX_E, { lazyConnect: true });
+        strategies.push(strategy);
+
+        await strategy.start(QUEUE, async runningJob => {
+            running.e = runningJob;
+            await firstValueFrom(release$);
+        });
+
+        const job = await strategy.add(new Job({ queueName: QUEUE, data: {} }));
+        await vi.waitFor(() => expect(running.e).toBeDefined());
+
+        await strategy.cancelJob(job.id as string);
+
+        await vi.waitFor(() => expect(running.e.state).toBe(JobState.CANCELLED));
     });
 });
