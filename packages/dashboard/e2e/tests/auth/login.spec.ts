@@ -361,7 +361,8 @@ test.describe('Stored user settings on login', () => {
      * request still goes to the server first, so that the server decides whether the session
      * may read the settings: without a valid session it answers FORBIDDEN, as with the plugin.
      * The emulated stored value has no `activeChannelId`, so the Dashboard writes the settings
-     * back soon after the login, once it has set the active channel.
+     * back soon after the login, once it has set the active channel. `stores` holds one stored
+     * value per administrator, and `currentStore` names the one the current session reads and writes.
      */
     async function emulateUserSettingsStore(
         page: Page,
@@ -452,6 +453,7 @@ test.describe('Stored user settings on login', () => {
         await expectStoredSettingsKept(page, savedValues);
     });
 
+    // #5646: after logging out, the next login must use the next administrator's stored settings
     test('keeps the stored settings of the next user after logging out', async ({ page, browser }) => {
         const suffix = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
         const password = 'test-password';
