@@ -332,7 +332,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
             if (data?.logout.success) {
                 // Clear all cached queries to prevent stale data
                 queryClient.clear();
-                resetServerSettings?.();
+                resetServerSettings();
                 try {
                     // localStorage can throw (quota exceeded, Safari private
                     // mode, security errors, storage disabled). The server-side

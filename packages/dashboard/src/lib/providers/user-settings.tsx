@@ -89,7 +89,13 @@ export interface UserSettingsContextType {
      */
     settingsReady: boolean;
     settings: UserSettings;
-    resetServerSettings?: () => void;
+    /**
+     * @description
+     * Discards the settings of the current session and reverts to the default settings, so
+     * that the next successful read initializes them from the new session's stored value.
+     * Nothing is saved until then. Called by the `AuthProvider` on logout.
+     */
+    resetServerSettings: () => void;
     setDisplayLanguage: (language: string) => void;
     setDisplayLocale: (locale: string | undefined) => void;
     setContentLanguage: (language: string) => void;
@@ -167,8 +173,7 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
     // Load settings from server on mount
     const {
         data: serverSettingsResponse,
-        isSuccess,
-        isPlaceholderData,
+        isSuccess: serverSettingsLoaded,
         isError: serverSettingsErrored,
         error,
     } = useQuery({
@@ -177,9 +182,9 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
         retry: false,
         staleTime: 0,
         enabled: settingsStoreIsAvailable,
+        // The previous session's value must not be read as a successful read of the next one
+        placeholderData: undefined,
     });
-
-    const serverSettingsLoaded = isSuccess && !isPlaceholderData;
 
     useEffect(() => {
         if (
@@ -200,7 +205,8 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
                 input: { key: SETTINGS_STORE_KEY_USER_SETTINGS, value: settingsToSave },
             }),
         onSuccess: (_, settingsSaved) => {
-            // Only update serverSettings after successful save
+            // Only update serverSettings after successful save. A null value means the session
+            // was reset while this save was in flight, and the result must not restore it.
             setServerSettings(current => (current ? settingsSaved : current));
             saveInProgressRef.current = false;
         },
@@ -210,9 +216,9 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
         },
     });
 
-    // Initialize settings from the first successful read of the server value. Until then
-    // `serverSettings` stays null, which stops the save effect below from writing this
-    // browser's local copy over the stored value.
+    // Initialize settings from the first successful read of the server value after mount or
+    // `resetServerSettings`. Until then `serverSettings` stays null, which stops the save effect
+    // below from writing this browser's local copy over the stored value.
     useEffect(() => {
         if (serverSettings) {
             return;
@@ -296,6 +302,10 @@ export const UserSettingsProvider: React.FC<UserSettingsProviderProps> = ({ quer
     const resetServerSettings = () => {
         setServerSettings(null);
         setIsReady(false);
+        // Without the SettingsStore, the local copy is the only place the settings are kept
+        if (settingsStoreIsAvailable) {
+            setSettings({ ...defaultSettings });
+        }
     };
 
     const contextValue: UserSettingsContextType = {

@@ -250,7 +250,7 @@ describe('UserSettingsProvider', () => {
     });
 });
 
-// #5646 — logging out and signing in as another administrator without a reload must
+// #5646: logging out and signing in as another administrator without a reload must
 // initialize the settings from the new administrator's stored value
 describe('UserSettingsProvider with AuthProvider', () => {
     let container: HTMLDivElement;
@@ -258,9 +258,13 @@ describe('UserSettingsProvider with AuthProvider', () => {
     let queryClient: QueryClient;
     let settingsContext: UserSettingsContextType;
     let authContext: AuthContext;
-    let session: 'first' | 'second' | null;
-    let stores: Record<'first' | 'second', Record<string, any>>;
-    const channels = { first: { id: '1', token: 'first-token' }, second: { id: '2', token: 'second-token' } };
+    let session: 'first' | 'second' | 'third' | null;
+    let stores: Record<'first' | 'second' | 'third', Record<string, any> | null>;
+    const channels = {
+        first: { id: '1', token: 'first-token' },
+        second: { id: '2', token: 'second-token' },
+        third: { id: '3', token: 'third-token' },
+    };
 
     function Probe() {
         settingsContext = useContext(UserSettingsContext)!;
@@ -296,12 +300,30 @@ describe('UserSettingsProvider with AuthProvider', () => {
         }
     }
 
+    async function render() {
+        await act(async () => {
+            root.render(
+                <I18nProvider i18n={setupI18n({ locale: 'en', messages: { en: {} } })}>
+                    <QueryClientProvider client={queryClient}>
+                        <UserSettingsProvider queryClient={queryClient}>
+                            <AuthProvider>
+                                <Probe />
+                            </AuthProvider>
+                        </UserSettingsProvider>
+                    </QueryClientProvider>
+                </I18nProvider>,
+            );
+        });
+        await flush();
+    }
+
     beforeEach(() => {
         localStorage.clear();
         session = 'first';
         stores = {
             first: { displayLanguage: 'de', tableSettings: { products: { pageSize: 11 } } },
             second: { displayLanguage: 'fr', tableSettings: { products: { pageSize: 37 } } },
+            third: null,
         };
         apiMock.query.mockReset();
         apiMock.mutate.mockReset();
@@ -344,20 +366,7 @@ describe('UserSettingsProvider with AuthProvider', () => {
     });
 
     it('initializes from the next administrator after logout and does not save the previous settings', async () => {
-        await act(async () => {
-            root.render(
-                <I18nProvider i18n={setupI18n({ locale: 'en', messages: { en: {} } })}>
-                    <QueryClientProvider client={queryClient}>
-                        <UserSettingsProvider queryClient={queryClient}>
-                            <AuthProvider>
-                                <Probe />
-                            </AuthProvider>
-                        </UserSettingsProvider>
-                    </QueryClientProvider>
-                </I18nProvider>,
-            );
-        });
-        await flush();
+        await render();
         expect(authContext.status).toBe('authenticated');
         expect(settingsContext.settings.displayLanguage).toBe('de');
 
@@ -372,8 +381,32 @@ describe('UserSettingsProvider with AuthProvider', () => {
         expect(stores.second).toEqual(
             expect.objectContaining({ displayLanguage: 'fr', tableSettings: { products: { pageSize: 37 } } }),
         );
-        expect(stores.first.displayLanguage).toBe('de');
+        expect(stores.first?.displayLanguage).toBe('de');
         expect(settingsContext.settings.displayLanguage).toBe('fr');
         expect(settingsContext.settings.tableSettings).toEqual({ products: { pageSize: 37 } });
+    });
+
+    it('starts from the default settings when the next administrator has no stored value', async () => {
+        await render();
+        expect(settingsContext.settings.displayLanguage).toBe('de');
+
+        await act(async () => authContext.logout());
+        await flush();
+        await act(async () => authContext.login('third', 'password'));
+        await flush();
+        expect(authContext.status).toBe('authenticated');
+        expect(settingsContext.settings.displayLanguage).toBe('en');
+        expect(settingsContext.settings.tableSettings).toEqual({});
+
+        await act(async () => settingsContext.setTheme('dark'));
+        await flush();
+        expect(stores.third).toEqual(
+            expect.objectContaining({
+                displayLanguage: 'en',
+                theme: 'dark',
+                activeChannelId: '3',
+                tableSettings: {},
+            }),
+        );
     });
 });
