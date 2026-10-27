@@ -14,6 +14,7 @@ const redisPort = process.env.CI ? +(process.env.E2E_REDIS_PORT || 6379) : 6379;
 const PREFIX_A = 'cancel-e2e-a';
 const PREFIX_B = 'cancel-e2e-b';
 const PREFIX_C = 'cancel-e2e-c';
+const PREFIX_D = 'cancel-e2e-d';
 const QUEUE = 'cancel-test';
 
 async function createStrategy(prefix: string) {
@@ -41,7 +42,7 @@ describe('BullMQJobQueueStrategy cancellation', () => {
     let redis: Redis;
 
     async function deleteTestKeys() {
-        for (const prefix of [PREFIX_A, PREFIX_B, PREFIX_C]) {
+        for (const prefix of [PREFIX_A, PREFIX_B, PREFIX_C, PREFIX_D]) {
             const keys = await redis.keys(`${prefix}:*`);
             if (keys.length) {
                 await redis.del(...keys);
@@ -104,5 +105,31 @@ describe('BullMQJobQueueStrategy cancellation', () => {
 
         await vi.waitFor(() => expect(running.c.state).toBe(JobState.CANCELLED));
         expect((await worker.findOne(job.id as string))?.state).toBe(JobState.CANCELLED);
+    });
+
+    // #5627 - start() before the subscriber connection is ready must not lose the subscription
+    it('cancels a running job when the worker started before the subscriber was ready', async () => {
+        const strategy = await createStrategy(PREFIX_D);
+        strategies.push(strategy);
+        const subscriber = (strategy as any).cancellationSub as Redis;
+        expect(subscriber.status).not.toBe('ready');
+
+        await new Promise<void>((resolve, reject) => {
+            subscriber.once('connect', () => {
+                strategy
+                    .start(QUEUE, async runningJob => {
+                        running.d = runningJob;
+                        await firstValueFrom(release$);
+                    })
+                    .then(resolve, reject);
+            });
+        });
+
+        const job = await strategy.add(new Job({ queueName: QUEUE, data: {} }));
+        await vi.waitFor(() => expect(running.d).toBeDefined());
+
+        await strategy.cancelJob(job.id as string);
+
+        await vi.waitFor(() => expect(running.d.state).toBe(JobState.CANCELLED));
     });
 });
