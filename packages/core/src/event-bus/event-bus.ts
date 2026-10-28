@@ -275,6 +275,8 @@ export class EventBus implements OnModuleDestroy {
                             `Circular dependency detected between event handlers ${handler.id} and ${beforeHandler.id}`,
                         );
                     }
+                    // The "before" handler already declares "after" this handler, so its own
+                    // "after" branch orders the pair. Following this edge too recurses forever.
                     if (beforeHandler.after !== handler.id) {
                         orderedHandlers = orderedHandlers.filter(h => h.id !== beforeHandler.id);
                         addHandler(beforeHandler);
