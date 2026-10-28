@@ -294,11 +294,6 @@ export class EventBus implements OnModuleDestroy {
             if (handler.after) {
                 const afterHandler = handlerMap.get(handler.after);
                 if (afterHandler) {
-                    if (afterHandler.after === handler.id) {
-                        throw new Error(
-                            `Circular dependency detected between event handlers ${handler.id} and ${afterHandler.id}`,
-                        );
-                    }
                     orderedHandlers = orderedHandlers.filter(h => h.id !== afterHandler.id);
                     addHandler(afterHandler);
                 }
@@ -311,11 +306,6 @@ export class EventBus implements OnModuleDestroy {
             if (handler.before) {
                 const beforeHandler = handlerMap.get(handler.before);
                 if (beforeHandler) {
-                    if (beforeHandler.before === handler.id) {
-                        throw new Error(
-                            `Circular dependency detected between event handlers ${handler.id} and ${beforeHandler.id}`,
-                        );
-                    }
                     orderedHandlers = orderedHandlers.filter(h => h.id !== beforeHandler.id);
                     addHandler(beforeHandler);
                 }
