@@ -188,6 +188,7 @@ export class EventBus implements OnModuleDestroy {
     registerBlockingEventHandler<T extends VendureEvent>(handlerOptions: BlockingEventHandlerOptions<T>) {
         const events = Array.isArray(handlerOptions.event) ? handlerOptions.event : [handlerOptions.event];
 
+        const orderedHandlersByEvent = new Map<Type<T>, Array<BlockingEventHandlerOptions<T>>>();
         for (const event of events) {
             const handlers = this.blockingEventHandlers.get(event);
             const handlerWithIdAlreadyExists = handlers?.some(h => h.id === handlerOptions.id);
@@ -197,7 +198,9 @@ export class EventBus implements OnModuleDestroy {
                 );
             }
 
-            const orderedHandlers = this.orderEventHandlers([...(handlers ?? []), handlerOptions]);
+            orderedHandlersByEvent.set(event, this.orderEventHandlers([...(handlers ?? []), handlerOptions]));
+        }
+        for (const [event, orderedHandlers] of orderedHandlersByEvent) {
             this.blockingEventHandlers.set(event, orderedHandlers);
         }
     }

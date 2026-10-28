@@ -568,6 +568,28 @@ describe('EventBus', () => {
             expect(spy.mock.calls.map(call => call[0])).toEqual(['A', 'C']);
         });
 
+        it('keeps the registered handlers of every event when a multi-event registration is rejected', async () => {
+            const spy = vi.fn((input: string) => undefined);
+            eventBus.registerBlockingEventHandler({
+                handler: () => spy('A'),
+                id: 'A',
+                event: OtherTestEvent,
+                after: 'B',
+            });
+            expect(() =>
+                eventBus.registerBlockingEventHandler({
+                    handler: () => spy('B'),
+                    id: 'B',
+                    event: [TestEvent, OtherTestEvent],
+                    after: 'A',
+                }),
+            ).toThrowError('Circular dependency detected');
+
+            await eventBus.publish(new TestEvent('foo'));
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
         it('blocks execution of the publish method', async () => {
             const event = new TestEvent('foo');
             const subject = new Subject<void>();
