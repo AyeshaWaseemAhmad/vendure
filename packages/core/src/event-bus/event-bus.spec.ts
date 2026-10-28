@@ -423,7 +423,7 @@ describe('EventBus', () => {
             expect(spy).toHaveBeenNthCalledWith(2, 'test-handler2');
         });
 
-        it('orders handlers which declare the same constraint on both sides, whatever the registration order', async () => {
+        it('orders handlers which declare the same constraint on both sides, with the "before" side registered first', async () => {
             const event = new TestEvent('foo');
             const spy = vi.fn((input: string) => undefined);
             eventBus.registerBlockingEventHandler({
