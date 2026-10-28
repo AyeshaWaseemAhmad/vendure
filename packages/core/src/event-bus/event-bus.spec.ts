@@ -469,10 +469,11 @@ describe('EventBus', () => {
 
             await eventBus.publish(event);
 
-            const calls = spy.mock.calls.map(call => call[0]);
-            expect(calls).toHaveLength(3);
-            expect(calls).toContain('test-handler3');
-            expect(calls.indexOf('test-handler2')).toBeLessThan(calls.indexOf('test-handler1'));
+            expect(spy.mock.calls.map(call => call[0])).toEqual([
+                'test-handler3',
+                'test-handler2',
+                'test-handler1',
+            ]);
         });
 
         it('throws if there is a cycle in before ordering', () => {
